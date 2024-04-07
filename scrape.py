@@ -5,29 +5,69 @@ import sys
 
 pd.set_option('display.max_rows', 100)
 pd.set_option('display.max_colwidth', 80)
-pd.set_option('display.width', 100)
+pd.set_option('display.width', 500)
 
 sg_locale = ('location=Singapore&latitude=1.35208&longitude=103.81983&'
              'countryCode=SG&locationPrecision=Country&radius=40&radiusUnit=km')
+
+my_page_size = 100
+default_search = 'analyst'
+
+
+def job_scope(title: str):
+    title = title.lower()
+    if 'quant' in title:
+        return 'Quant'
+    if 'business analyst' in title:
+        return 'BA'
+    if 'software' in title:
+        return 'SWE/Dev'
+    if 'scientist' in title:
+        return 'Scientist'
+    if 'developer' in title:
+        return 'SWE/Dev'
+    if 'risk' in title:
+        return 'Risk'
+    if 'support' in title:
+        return 'Support'
+    if 'fraud' in title:
+        return 'Fraud'
+    if 'project' in title:
+        return 'Project'
+    if 'analytic' in title:
+        return 'Analytics'
+    if 'product' in title:
+        return 'Product'
+    if 'operation' in title:
+        return 'Ops'
+    if 'cyber' in title:
+        return 'Cyber'
+    else:
+        return ''
+
+
+def search_term_to_url(inputs: str):
+    input_arr = inputs.split(' ')
+    return '-'.join(input_arr), '+'.join(input_arr)
 
 
 def main():
     args = sys.argv[1:]
 
     if len(args) == 2 and args[0] == '-t':
-        search_term = args[1]
-        term_1 = f'/{search_term}'
-        term_2 = f'q={search_term}&'
-        print(search_term)
+        search_inputs = args[1]
+        t1, t2 = search_term_to_url(search_inputs)
+        # print(f't1={t1}, t2={t2}')
+        term_1 = f'/{t1}'
+        term_2 = f'q={t2}&'
     else:
-        search_term = 'analyst'
-        term_1 = f'/{search_term}'
-        term_2 = f'q={search_term}&'
+        print('Args not invalid. please specify with -t search term')
+        print('Searching with default term')
+        search_inputs = default_search
+        term_1 = f'/{search_inputs}'
+        term_2 = f'q={search_inputs}&'
 
-    my_page_size = 50
-
-    print(f'Searching for {search_term}, size={my_page_size}')
-
+    print(f'Searching for {search_inputs}, size={my_page_size}')
     url_generated = (f'https://www.efinancialcareers.sg/jobs{term_1}/in-singapore?{term_2}'
                      f'{sg_locale}&'
                      f'pageSize={my_page_size}&currencyCode=SGD&language=en&includeUnspecifiedSalary=true')
@@ -37,28 +77,36 @@ def main():
 
     find_divs = soup.body.find_all('div', class_='job-search-results')[0].find_all('div', class_='card-info')
 
-    job_titles, companies, period = [], [], []
+    job_titles, companies, periods = [], [], []
 
     for card in find_divs:
         if card is not None:
-            companies.append(card.find_all('div', class_='company')[0].string)
-            job_titles.append(card.div.div.a.h3.string)
-            period.append(card.find_all('div', class_='meta-section')[0].span.string)
+            if len(card.find_all('div', class_='company')) > 0:
+                companies.append(card.find_all('div', class_='company')[0].string.strip())
+            else:
+                companies.append("non-disclosed")
+            job_titles.append(card.div.div.a.h3.string.strip())
+            periods.append(card.find_all('div', class_='meta-section')[0].span.string)
+
+    keywords = job_titles.copy()
+    keywords = map(job_scope, keywords)
 
     df = pd.DataFrame(
         data={
-            'company': companies,
-            'job_title': job_titles,
-            'period': period
+            'Company': companies,
+            'Job_title': job_titles,
+            'Keyword': keywords,
+            'Period': periods
         }
     )
 
     # df.sort_values(by=['company'])
-    print("\nGrouping by companies")
-    print(df.groupby('company').count())
+    print("\nTop Companies:")
+    print(df['Company'].value_counts())
+    print("\nTop Job Keywords:")
+    print(df['Keyword'].value_counts())
     print("\n")
     print(df)
-
     # df.to_csv('data_scrapped.csv', sep=';', index=False)
 
 
