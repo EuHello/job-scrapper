@@ -12,6 +12,7 @@ sg_locale = ('location=Singapore&latitude=1.35208&longitude=103.81983&'
 
 my_page_size = 100
 default_search = 'analyst'
+max_period_days = 7
 
 
 def job_scope(title: str):
@@ -60,7 +61,7 @@ def period_inclusion(phrase: str):
         if 'hour' in phrase_arr[1]:
             return True
         if 'day' in phrase_arr[1]:
-            if int(phrase_arr[0]) < 7:
+            if int(phrase_arr[0]) < max_period_days:
                 return True
             else:
                 return False
