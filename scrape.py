@@ -4,8 +4,8 @@ import pandas as pd
 import sys
 
 pd.set_option('display.max_rows', 100)
-pd.set_option('display.max_colwidth', 80)
-pd.set_option('display.width', 500)
+pd.set_option('display.max_colwidth', 100)
+pd.set_option('display.width', 700)
 
 sg_locale = ('location=Singapore&latitude=1.35208&longitude=103.81983&'
              'countryCode=SG&locationPrecision=Country&radius=40&radiusUnit=km')
@@ -21,34 +21,41 @@ def job_scope(title: str):
         return 'Quant'
     if 'business analyst' in title:
         return 'BA'
-    if 'software' in title:
-        return 'SWE/Dev'
+    if 'business intelligence' in title:
+        return 'BI'
+    if 'treasury' in title:
+        return 'Treasury'
     if 'scientist' in title:
         return 'Scientist'
-    if 'developer' in title:
-        return 'SWE/Dev'
+    if 'fraud' in title or 'crime' in title or 'laundering' in title or 'aml' in title:
+        return 'Fraud/Crime'
     if 'risk' in title:
         return 'Risk'
+    if 'compliance' in title:
+        return 'Compliance'
     if 'support' in title:
         return 'Support'
-    if 'fraud' in title:
-        return 'Fraud'
+    if 'investment' in title or 'portfolio' in title:
+        return 'Investments'
+    if 'developer' in title or 'devops' in title or 'software' in title or 'data engineer' in title:
+        return 'SWE/Dev'
     if 'project' in title:
         return 'Project'
     if 'analytic' in title:
         return 'Analytics'
     if 'product' in title:
         return 'Product'
-    if 'operation' in title:
-        return 'Ops'
     if 'cyber' in title:
-        return 'Cyber'
+        return 'Cybersecurity'
     if 'intern' in title:
         return 'Intern'
-    if 'compliance' in title:
-        return 'Compliance'
-    if 'fraud' in title or 'crime' in title or 'laundering' in title or 'aml' in title:
-        return 'Fraud/Crime'
+    if 'operation' in title:
+        return 'Ops'
+    if 'fund' in title:
+        return 'Funds'
+    if ('actuarial' in title or 'actuary' in title or 'marketing' in title or 'procurement' in title or
+            'relationship' in title or 'tax' in title or 'audit' in title or 'recruit' in title):
+        return 'z-Others'
     else:
         return ''
 
@@ -82,7 +89,6 @@ def main():
     if len(args) == 2 and args[0] == '-t':
         search_inputs = args[1]
         t1, t2 = search_term_to_url(search_inputs)
-        # print(f't1={t1}, t2={t2}')
         term_1 = f'/{t1}'
         term_2 = f'q={t2}&'
     else:
@@ -125,9 +131,10 @@ def main():
             'Period_Include': periods_to_include
         }
     )
+    total_postings = df.shape[0]
+    print(f'Found {total_postings} postings in total')
 
     df = df.loc[df['Period_Include'] == True]
-    print(f'Found {df.shape[0]} postings out of {my_page_size} searched')
 
     df = df.sort_values(by=['Company'])
     df = df.sort_values(by=['Keyword'])
@@ -136,9 +143,8 @@ def main():
     print("\nTop Job Keywords:")
     print(df['Keyword'].value_counts())
     print("\n")
-    print(f'Found {df.shape[0]} postings out of {my_page_size} searched')
+    print(f'After filtering up to {max_period_days} days ago, found {df.shape[0]} postings out of {total_postings}')
     print(df)
-    # df.to_csv('data_scrapped.csv', sep=';', index=False)
 
 
 if __name__ == "__main__":
