@@ -1,39 +1,63 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+import sys
+
+pd.set_option('display.max_rows', 500)
+pd.set_option('display.max_colwidth', 100)
+pd.set_option('display.width', 1000)
+
+sg_locale = ('location=Singapore&latitude=1.35208&longitude=103.81983&'
+             'countryCode=SG&locationPrecision=Country&radius=40&radiusUnit=km')
 
 
-url_all = ("https://www.efinancialcareers.sg/jobs/in-singapore?"
-           "location=Singapore&latitude=1.35208&longitude=103.81983&"
-           "countryCode=SG&locationPrecision=Country&radius=40&radiusUnit=km&"
-           # "pageSize=15&currencyCode=SGD&language=en&includeUnspecifiedSalary=true")
-           "pageSize=100&currencyCode=SGD&language=en&includeUnspecifiedSalary=true")
+def main():
+    args = sys.argv[1:]
 
-url_analyst = ("https://www.efinancialcareers.sg/jobs/analyst/in-singapore?"
-               "q=analyst&"
-               "location=Singapore&latitude=1.35208&longitude=103.81983&"
-               "countryCode=SG&locationPrecision=Country&radius=40&radiusUnit=km&"
-               "pageSize=15&"
-               "currencyCode=SGD&language=en&includeUnspecifiedSalary=true")
+    if len(args) == 2 and args[0] == '-t':
+        search_term = args[1]
+        term_1 = f'/{search_term}'
+        term_2 = f'q={search_term}&'
+        print(search_term)
+    else:
+        search_term = 'analyst'
+        term_1 = f'/{search_term}'
+        term_2 = f'q={search_term}&'
 
-singapore_location = ('location=Singapore&latitude=1.35208&longitude=103.81983&'
-                      'countryCode=SG&locationPrecision=Country&radius=40&radiusUnit=km')
-my_page_size = 50
-url_generic = (f'https://www.efinancialcareers.sg/jobs/in-singapore?'
-               f'{singapore_location}&'
-               f'pageSize={my_page_size}&currencyCode=SGD&language=en&includeUnspecifiedSalary=true')
+    my_page_size = 50
 
-page = requests.get(url_generic)
-soup = BeautifulSoup(page.content, "html.parser")
+    print(f'Searching for {search_term}, size={my_page_size}')
 
-find_divs = soup.body.find_all('div', class_='job-search-results')[0].find_all('div', class_='card-info')
+    url_generated = (f'https://www.efinancialcareers.sg/jobs{term_1}/in-singapore?{term_2}'
+                     f'{sg_locale}&'
+                     f'pageSize={my_page_size}&currencyCode=SGD&language=en&includeUnspecifiedSalary=true')
 
-job_titles = []
-companies = []
-for card in find_divs:
-    if card is not None:
-        job_titles.append(card.div.div.a.h3.string)
-        companies.append(card.find_all('div', class_='company')[0].string)
+    page = requests.get(url_generated)
+    soup = BeautifulSoup(page.content, "html.parser")
 
-df = pd.DataFrame(data={'job_title': job_titles, 'company': companies})
-print(df)
+    find_divs = soup.body.find_all('div', class_='job-search-results')[0].find_all('div', class_='card-info')
+
+    job_titles, companies, period = [], [], []
+
+    for card in find_divs:
+        if card is not None:
+            job_titles.append(card.div.div.a.h3.string)
+            companies.append(card.find_all('div', class_='company')[0].string)
+            period.append(card.find_all('div', class_='meta-section')[0].span.string)
+
+    df = pd.DataFrame(
+        data={
+            'job_title': job_titles,
+            'company': companies,
+            'period': period
+        }
+    )
+
+    df.sort_values(by=['company'])
+    print(df)
+
+    # df.to_csv('data_scrapped.csv', sep=';', index=False)
+
+
+if __name__ == "__main__":
+    main()
