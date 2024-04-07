@@ -3,9 +3,9 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import sys
 
-pd.set_option('display.max_rows', 500)
-pd.set_option('display.max_colwidth', 100)
-pd.set_option('display.width', 1000)
+pd.set_option('display.max_rows', 100)
+pd.set_option('display.max_colwidth', 80)
+pd.set_option('display.width', 100)
 
 sg_locale = ('location=Singapore&latitude=1.35208&longitude=103.81983&'
              'countryCode=SG&locationPrecision=Country&radius=40&radiusUnit=km')
@@ -41,19 +41,22 @@ def main():
 
     for card in find_divs:
         if card is not None:
-            job_titles.append(card.div.div.a.h3.string)
             companies.append(card.find_all('div', class_='company')[0].string)
+            job_titles.append(card.div.div.a.h3.string)
             period.append(card.find_all('div', class_='meta-section')[0].span.string)
 
     df = pd.DataFrame(
         data={
-            'job_title': job_titles,
             'company': companies,
+            'job_title': job_titles,
             'period': period
         }
     )
 
-    df.sort_values(by=['company'])
+    # df.sort_values(by=['company'])
+    print("\nGrouping by companies")
+    print(df.groupby('company').count())
+    print("\n")
     print(df)
 
     # df.to_csv('data_scrapped.csv', sep=';', index=False)
