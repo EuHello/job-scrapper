@@ -42,6 +42,12 @@ def job_scope(title: str):
         return 'Ops'
     if 'cyber' in title:
         return 'Cyber'
+    if 'intern' in title:
+        return 'Intern'
+    if 'compliance' in title:
+        return 'Compliance'
+    if 'fraud' in title or 'crime' in title or 'laundering' in title or 'aml' in title:
+        return 'Fraud/Crime'
     else:
         return ''
 
@@ -122,6 +128,7 @@ def main():
     df = df.loc[df['Period_Include'] == True]
     print(f'Found {df.shape[0]} postings out of {my_page_size} searched')
 
+    df = df.sort_values(by=['Company'])
     df = df.sort_values(by=['Keyword'])
     print("\nTop Companies:")
     print(df['Company'].value_counts())
