@@ -46,6 +46,24 @@ def job_scope(title: str):
         return ''
 
 
+def period_inclusion(phrase: str):
+    if phrase is not None:
+        phrase_arr = phrase.strip().split(' ')
+        if 'month' in phrase_arr[1]:
+            return False
+        if 'hour' in phrase_arr[1]:
+            return True
+        if 'day' in phrase_arr[1]:
+            if int(phrase_arr[0]) < 7:
+                return True
+            else:
+                return False
+        print(f'Unknown value found = {phrase}')
+        return True
+    else:
+        return True
+
+
 def search_term_to_url(inputs: str):
     input_arr = inputs.split(' ')
     return '-'.join(input_arr), '+'.join(input_arr)
@@ -88,24 +106,29 @@ def main():
             job_titles.append(card.div.div.a.h3.string.strip())
             periods.append(card.find_all('div', class_='meta-section')[0].span.string)
 
-    keywords = job_titles.copy()
-    keywords = map(job_scope, keywords)
+    keywords = map(job_scope, job_titles)
+    periods_to_include = map(period_inclusion, periods)
 
     df = pd.DataFrame(
         data={
             'Company': companies,
-            'Job_title': job_titles,
+            'Job_Title': job_titles,
             'Keyword': keywords,
-            'Period': periods
+            'Period': periods,
+            'Period_Include': periods_to_include
         }
     )
 
-    # df.sort_values(by=['company'])
+    df = df.loc[df['Period_Include'] == True]
+    print(f'Found {df.shape[0]} postings out of {my_page_size} searched')
+
+    df = df.sort_values(by=['Keyword'])
     print("\nTop Companies:")
     print(df['Company'].value_counts())
     print("\nTop Job Keywords:")
     print(df['Keyword'].value_counts())
     print("\n")
+    print(f'Found {df.shape[0]} postings out of {my_page_size} searched')
     print(df)
     # df.to_csv('data_scrapped.csv', sep=';', index=False)
 
